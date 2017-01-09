@@ -58,19 +58,20 @@
 	while (1) {	\
 							while (is_fallback != 0) {} \
 	                        if (tries > 0) { \
-    					int status = _xbegin();	\
-    						if (status == _XBEGIN_STARTED) { \
+    							int status = _xbegin();	\
+    							if (status == _XBEGIN_STARTED) { \
     							    if (is_fallback != 0) { _xabort(0xab); } \
-    	                           			    break;	\
-    						}\
-    						tries--; \
-    					} else {  \
-    						 tries = 0; \
-    						 STM_BEGIN_WR();   \
-                                		 abortFunPtr = &abortSTM;    \
-                               			 sharedReadFunPtr = &sharedReadSTM;  \
-                              			 sharedWriteFunPtr = &sharedWriteSTM;    \
-                               			 break;  \
+    	                            break;	\
+    							} else { \
+    								if (random_generate(randomFallback) % 100 < FALLBACK_PROB) tries = 0; \
+    							}	\
+    						} else {  \
+    						    tries = 0; \
+    						    STM_BEGIN_WR();   \
+                                abortFunPtr = &abortSTM;    \
+                                sharedReadFunPtr = &sharedReadSTM;  \
+                                sharedWriteFunPtr = &sharedWriteSTM;    \
+                                break;  \
     						} \
 	}
 
