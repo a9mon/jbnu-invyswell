@@ -1,12 +1,14 @@
-ifndef PROB
-  PROB=-DFALLBACK_PROB=10
-endif
+# delete FALLBACK_PROB
+# ifndef PROB
+#   PROB=-DFALLBACK_PROB=10
+# endif
 
 CFLAGS   += -w -DHTM -I$(STM) $(PROB) # We substitute our RTM implementation for HTM.   
 
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
-LIBS     += -lnorec -lrt -lpthread -mrtm -L../rapl-power -lrapl
+# rapl library deleted...
+LIBS     += -lnorec -lrt -lpthread -mrtm
 
 .PHONY: default
 default: $(PROG)

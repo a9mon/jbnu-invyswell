@@ -1,7 +1,8 @@
 CC       := gcc
 CFLAGS   += -g -Wall -pthread -mrtm
 CFLAGS   += -O3
-CFLAGS   += -I$(LIB) -I../rapl-power/
+# delete rapl library
+CFLAGS   += -I$(LIB)
 CPP      := g++
 CPPFLAGS += $(CFLAGS)
 LD       := g++
