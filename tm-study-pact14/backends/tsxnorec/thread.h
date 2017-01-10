@@ -60,6 +60,8 @@ extern __thread void (*abortFunPtr)(Thread* Self);
 extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 extern __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 
+extern volatile unsigned long is_fallback;
+
 typedef struct barrier {
     pthread_cond_t complete;
     pthread_mutex_t mutex;
