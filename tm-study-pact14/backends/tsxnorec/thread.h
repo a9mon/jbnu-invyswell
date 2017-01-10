@@ -49,10 +49,6 @@ extern "C" {
 #  define THREAD_BARRIER(bar, tid)          barrier_cross(bar)
 #  define THREAD_BARRIER_FREE(bar)          barrier_free(bar)
 
-#include "random.h"
-
-extern __thread random_t* randomFallback;
-
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
@@ -63,8 +59,6 @@ extern void sharedWriteSTM(Thread* Self, intptr_t* addr, intptr_t val);
 extern __thread void (*abortFunPtr)(Thread* Self);
 extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 extern __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
-
-extern volatile unsigned long is_fallback;
 
 typedef struct barrier {
     pthread_cond_t complete;
