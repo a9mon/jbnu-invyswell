@@ -27,6 +27,7 @@
 #  include <setjmp.h>
 #  define STM_JMPBUF_T                  sigjmp_buf
 #  define STM_JMPBUF                    buf
+#define TM_JMPBUF			tmbuf
 
 
 #define STM_VALID()                     (1)
@@ -42,9 +43,12 @@
 
 
 
-
-
-
+#define TM_BEGIN_JMP()			sigjmp_buf* jmpbuf; \
+					do { \
+					    STM_JMPBUF_T TM_JMPBUF; \
+					    sigsetjmp(TM_JMPBUF, 2); \
+					    jmpbuf = &TM_JMPBUF; \
+					} while (0) /* enforce comma */
 
 #  define STM_BEGIN(isReadOnly)         do { \
                                             STM_JMPBUF_T STM_JMPBUF; \
