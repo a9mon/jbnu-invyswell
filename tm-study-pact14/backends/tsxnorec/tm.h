@@ -112,7 +112,7 @@
                                 _xend();	\
                                 TX_AFTER_FINALIZE();    \
 				break;  \
-			} else if ((random_generate(randomFallback) % 100 < FALLBACK_PROB) || _XABORT_CODE(status) == 0xab) { \
+			} else if (_XABORT_CODE(status) == 0xab) { \
 				__sync_add_and_fetch(&is_fallback,1);    \
 				int ret = HYBRID_STM_END();  \
 				__sync_sub_and_fetch(&is_fallback,1);    \
