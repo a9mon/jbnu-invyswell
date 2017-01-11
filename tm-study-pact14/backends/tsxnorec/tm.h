@@ -59,7 +59,9 @@
 	int stmretry = 3; \
 	int isSingle = 0; \
 	sigjmp_buf tmbuf; \
+	do { \
 	sigsetjmp(tmbuf, 2); \
+	} while (0); \
 	while (1) {	\
 		if (isSingle == 1) { \
 			pthread_mutex_lock(&global_rtm_mutex); \

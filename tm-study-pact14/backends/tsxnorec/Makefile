@@ -1,9 +1,4 @@
-# delete FALLBACK_PROB
-# ifndef PROB
-#   PROB=-DFALLBACK_PROB=10
-# endif
-
-CFLAGS   += -w -DHTM -I$(STM) $(PROB) # We substitute our RTM implementation for HTM.   
+CFLAGS   += -w -DHTM -I$(STM) # We substitute our RTM implementation for HTM.   
 
 CPPFLAGS := $(CFLAGS)
 LDFLAGS  += -L$(STM)
