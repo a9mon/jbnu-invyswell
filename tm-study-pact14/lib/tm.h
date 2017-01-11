@@ -58,7 +58,8 @@
 	int tries = 4;	\
 	int stmretry = 3; \
 	int isSingle = 0; \
-	TM_BEGIN_JMP(); /* JMP for fallback(Single lock) */ \
+	sigjmp_buf tmbuf; \
+	sigsetjmp(tmbuf, 2); \
 	while (1) {	\
 		if (isSingle == 1) { \
 			pthread_mutex_lock(&global_rtm_mutex); \

@@ -42,14 +42,6 @@
 
 
 
-
-#define TM_BEGIN_JMP()			sigjmp_buf* jmpbuf; \
-					do { \
-					    STM_JMPBUF_T TM_JMPBUF; \
-					    sigsetjmp(TM_JMPBUF, 2); \
-					    jmpbuf = &TM_JMPBUF; \
-					} while (0) /* enforce comma */
-
 #  define STM_BEGIN(isReadOnly)         do { \
                                             STM_JMPBUF_T STM_JMPBUF; \
                                             sigsetjmp(STM_JMPBUF, 1); \
