@@ -1,0 +1,1 @@
+./yada -a15 -i inputs/ttimeu1000000.2 -t$1

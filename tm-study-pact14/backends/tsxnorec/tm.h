@@ -39,7 +39,7 @@
 #define TM_ARGDECL_ALONE              STM_THREAD_T* TM_ARG_ALONE
 #define TM_CALLABLE                   /* nothing */
 
-#define TM_STARTUP(numThread)     STM_STARTUP()
+#define TM_STARTUP(numThread)     STM_STARTUP() // ; THREAD_MUTEX_INIT(the_lock);
 #define TM_SHUTDOWN()             STM_SHUTDOWN()
 
 #define TM_THREAD_ENTER()         TM_ARGDECL_ALONE = STM_NEW_THREAD(); \
@@ -60,16 +60,12 @@
 	int isSingle = 0; \
 	sigjmp_buf tmbuf; \
 	do { \
-	sigsetjmp(tmbuf, 2); \
+		if( sigsetjmp(tmbuf, 2) == 2 ) { \
+			isSingle = 1; \
+		} \
 	} while (0); \
 	while (1) {	\
-		if (isSingle == 1) { \
-			pthread_mutex_lock(&global_rtm_mutex); \
-			sharedReadFunPtr = &sharedReadHTM; \
-			sharedWriteFunPtr = &sharedWriteHTM; \
-			break; \
-		} \
-		while (is_fallback != 0) {} \
+		while (is_fallback != 0) { printf("fallback?"); } \
 	        if (tries > 0) { \
     			int status = _xbegin();	\
     			if (status == _XBEGIN_STARTED) { \
@@ -77,19 +73,24 @@
     	                        break;	\
     			} \
 			tries--; \
-    		} else {  \
+    		} else if (isSingle == 0 && tries == 0) {  \
     			STM_BEGIN_WR();   \
 			stmretry--; \
 			if (stmretry == 0) { \
-				__sync_add_and_fetch(&is_fallback,1); \
-				isSingle = 1; \
+				printf("retry\n"); \
 				siglongjmp(tmbuf, 2); \
 			} \
                         abortFunPtr = &abortSTM;    \
                         sharedReadFunPtr = &sharedReadSTM;  \
                         sharedWriteFunPtr = &sharedWriteSTM;    \
                         break;  \
-		} \
+		} else { \
+			__sync_add_and_fetch(&is_fallback,1); \
+			pthread_mutex_lock(&global_rtm_mutex); \
+                        sharedReadFunPtr = &sharedReadHTM; \
+                        sharedWriteFunPtr = &sharedWriteHTM; \
+                        break; \
+                } \
 	}
 
 
@@ -99,36 +100,38 @@
 		__sync_sub_and_fetch(&is_fallback,1); \
 		isSingle = 0; \
 	} \
-	else if (tries > 0) {	\
-        	HTM_INC_CLOCK();  \
-		_xend();	\
-	} else {	\
-		long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
-		int retriesCommit = 4; \
-		while (1) {  \
-			int status = _xbegin();  \
-			if (status == _XBEGIN_STARTED) { \
-				if (is_fallback != 0) { _xabort(0xab); } \
-				long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
-				if (res_htm == 1) { _xabort(0xac); }   \
-                                _xend();	\
-                                TX_AFTER_FINALIZE();    \
-				break;  \
-			} else if (_XABORT_CODE(status) == 0xab) { \
-				__sync_add_and_fetch(&is_fallback,1);    \
-				int ret = HYBRID_STM_END();  \
-				__sync_sub_and_fetch(&is_fallback,1);    \
-				if (ret == 0) { \
+	else { \
+		if (tries > 0) {	\
+	        	HTM_INC_CLOCK();  \
+			_xend();	\
+		} else {	\
+			long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
+			int retriesCommit = 4; \
+			while (1) {  \
+				int status = _xbegin();  \
+				if (status == _XBEGIN_STARTED) { \
+					if (is_fallback != 0) { _xabort(0xab); } \
+					long res_htm = TX_END_HYBRID_LAST_STEP(local_global_clock); \
+					if (res_htm == 1) { _xabort(0xac); }   \
+                               		_xend();	\
+	                                TX_AFTER_FINALIZE();    \
+					break;  \
+				} else if (_XABORT_CODE(status) == 0xab) { \
+					__sync_add_and_fetch(&is_fallback,1);    \
+					int ret = HYBRID_STM_END();  \
+					__sync_sub_and_fetch(&is_fallback,1);    \
+					if (ret == 0) { \
+						STM_RESTART(); \
+					} \
+					break;  \
+				} else if (_XABORT_CODE(status) == 0xac) { \
 					STM_RESTART(); \
 				} \
-				break;  \
-			} else if (_XABORT_CODE(status) == 0xac) { \
-				STM_RESTART(); \
-			} \
-		}    \
-                abortFunPtr = &abortHTM;    \
-                sharedReadFunPtr = &sharedReadHTM;  \
-                sharedWriteFunPtr = &sharedWriteHTM;    \
+			}    \
+	                abortFunPtr = &abortHTM;    \
+        	        sharedReadFunPtr = &sharedReadHTM;  \
+                	sharedWriteFunPtr = &sharedWriteHTM;    \
+		} \
 	} \
 };
 

@@ -192,13 +192,13 @@ processPackets (void* argPtr)
     PDETECTOR_ADDPREPROCESSOR(detectorPtr, &preprocessor_toLower);
 
     vector_t* errorVectorPtr = errorVectors[threadId];
-    printf("before while(1)...\n");
+    // printf("before while(1)...\n");
     while (1) {
 
         char* bytes;
-        TM_BEGIN(); printf("TM_BEGIN called 1\n");
+        TM_BEGIN(); // printf("TM_BEGIN called 1\n");
         bytes = TMSTREAM_GETPACKET(streamPtr);
-        TM_END(); printf("TM_END called 1\n");
+        TM_END(); // printf("TM_END called 1\n");
         if (!bytes) {
             break;
         }
@@ -207,11 +207,11 @@ processPackets (void* argPtr)
         long flowId = packetPtr->flowId;
 
         error_t error;
-        TM_BEGIN(); printf("agian TM-BEGIN()\n");
+        TM_BEGIN();
         error = TMDECODER_PROCESS(decoderPtr,
                                   bytes,
                                   (PACKET_HEADER_LENGTH + packetPtr->length));
-        TM_END(); printf("again TM-END()\n");
+        TM_END();
         if (error) {
             /*
              * Currently, stream_generate() does not create these errors.
@@ -223,9 +223,9 @@ processPackets (void* argPtr)
 
         char* data;
         long decodedFlowId;
-        TM_BEGIN(); printf("TM_BEIGIN 3rd\n");
+        TM_BEGIN(); // printf("TM_BEIGIN 3rd\n");
         data = TMDECODER_GETCOMPLETE(decoderPtr, &decodedFlowId);
-        TM_END(); printf("TM_END 3rd\n");
+        TM_END(); // printf("TM_END 3rd\n");
         if (data) {
             error_t error = PDETECTOR_PROCESS(detectorPtr, data);
             P_FREE(data);
