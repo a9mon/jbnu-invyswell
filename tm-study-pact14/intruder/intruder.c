@@ -192,13 +192,12 @@ processPackets (void* argPtr)
     PDETECTOR_ADDPREPROCESSOR(detectorPtr, &preprocessor_toLower);
 
     vector_t* errorVectorPtr = errorVectors[threadId];
-    // printf("before while(1)...\n");
     while (1) {
 
         char* bytes;
-        TM_BEGIN(); // printf("TM_BEGIN called 1\n");
+        TM_BEGIN();
         bytes = TMSTREAM_GETPACKET(streamPtr);
-        TM_END(); // printf("TM_END called 1\n");
+        TM_END();
         if (!bytes) {
             break;
         }
@@ -223,9 +222,9 @@ processPackets (void* argPtr)
 
         char* data;
         long decodedFlowId;
-        TM_BEGIN(); // printf("TM_BEIGIN 3rd\n");
+        TM_BEGIN();
         data = TMDECODER_GETCOMPLETE(decoderPtr, &decodedFlowId);
-        TM_END(); // printf("TM_END 3rd\n");
+        TM_END();
         if (data) {
             error_t error = PDETECTOR_PROCESS(detectorPtr, data);
             P_FREE(data);
@@ -237,7 +236,6 @@ processPackets (void* argPtr)
         }
 
     }
-    printf("while end...\n");
 
     PDETECTOR_FREE(detectorPtr);
 

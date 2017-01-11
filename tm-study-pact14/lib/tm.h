@@ -39,8 +39,9 @@
 #define TM_ARGDECL_ALONE              STM_THREAD_T* TM_ARG_ALONE
 #define TM_CALLABLE                   /* nothing */
 
-#define TM_STARTUP(numThread)     STM_STARTUP() // ; THREAD_MUTEX_INIT(the_lock);
-#define TM_SHUTDOWN()             STM_SHUTDOWN()
+#define TM_STARTUP(numThread)     STM_STARTUP(); // THREAD_MUTEX_INIT(global_rtm_mutex);
+#define TM_SHUTDOWN()             STM_SHUTDOWN(); \
+				printf("totalcount : %d, single : %d, stm : %d, htm : %d\n", totalcounts, singlecount, stmcount, htmcount);
 
 #define TM_THREAD_ENTER()         TM_ARGDECL_ALONE = STM_NEW_THREAD(); \
                                   STM_INIT_THREAD(TM_ARG_ALONE, thread_getId()); \
@@ -53,41 +54,48 @@
 #define TM_BEGIN_WAIVER()
 #define TM_END_WAIVER()
 
+
+
 #define TM_BEGIN() \
 { \
 	int tries = 4;	\
-	/* int stmretry = 3; */ \
+	int stmretry = 3; \
 	int isSingle = 0; \
-	/* sigjmp_buf tmbuf; \
+	sigjmp_buf tmbuf; \
 	do { \
-		sigsetjmp(tmbuf, 2); \
-	} while(0); */ \
+		int checkvalue = sigsetjmp(tmbuf, 2); \
+		if (checkvalue != 0) { \
+			isSingle=1; tries=0; \
+		} \
+	} while(0); \
 	while (1) {	\
 		while (is_fallback != 0) {} \
 	        if (tries > 0) { \
     			int status = _xbegin();	\
     			if (status == _XBEGIN_STARTED) { \
     				if (is_fallback != 0) { _xabort(0xab); } \
+				htmcount++; \
     	                        break;	\
     			} \
 			tries--; \
     		} else { \
 			if (isSingle == 0) {  \
 	    			STM_BEGIN_WR();   \
-				/* stmretry--; */ \
-				/* if (stmretry == 0) { \
-					printf("retry\n"); \
+				stmretry--; \
+				if (stmretry <= 0) { \
 					siglongjmp(tmbuf, 2); \
-				} */ \
+				} \
         	                abortFunPtr = &abortSTM;    \
                 	        sharedReadFunPtr = &sharedReadSTM;  \
                         	sharedWriteFunPtr = &sharedWriteSTM;    \
+				stmcount++; \
 	                        break;  \
 			} else { \
-				__sync_add_and_fetch(&is_fallback,1); \
-				pthread_mutex_lock(&global_rtm_mutex); \
+				/* pthread_mutex_lock(&global_rtm_mutex); */ \
+				pthread_mutex_lock(&the_lock); \
 	                        sharedReadFunPtr = &sharedReadHTM; \
         	                sharedWriteFunPtr = &sharedWriteHTM; \
+				singlecount++; \
                 	        break; \
 			} \
                 } \
@@ -96,8 +104,7 @@
 
 #define TM_END() \
 	if (isSingle == 1) { \
-		pthread_mutex_unlock(&global_rtm_mutex); \
-		__sync_sub_and_fetch(&is_fallback,1); \
+		pthread_mutex_unlock(&the_lock); \
 		isSingle = 0; \
 	} \
 	else { \
@@ -116,7 +123,7 @@
                                		_xend();	\
 	                                TX_AFTER_FINALIZE();    \
 					break;  \
-				} else if (_XABORT_CODE(status) == 0xab) { \
+				} else if (tries == 0 || _XABORT_CODE(status) == 0xab) { \
 					__sync_add_and_fetch(&is_fallback,1);    \
 					int ret = HYBRID_STM_END();  \
 					__sync_sub_and_fetch(&is_fallback,1);    \
@@ -133,6 +140,7 @@
                 	sharedWriteFunPtr = &sharedWriteHTM;    \
 		} \
 	} \
+	totalcounts++; \
 };
 
 

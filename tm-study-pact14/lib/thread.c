@@ -9,6 +9,10 @@
 #include "types.h"
 // #include "rapl.h"
 
+int singlecount = 0;
+int stmcount = 0;
+int htmcount = 0;
+int totalcounts = 0;
 static THREAD_LOCAL_T    global_threadId;
 static long              global_numThread       = 1;
 static THREAD_BARRIER_T* global_barrierPtr      = NULL;
@@ -19,7 +23,9 @@ static void            (*global_funcPtr)(void*) = NULL;
 static void*             global_argPtr          = NULL;
 static volatile bool_t   global_doShutdown      = FALSE;
 
-THREAD_MUTEX_T global_rtm_mutex;
+__attribute__((aligned(CACHE_LINE_SIZE))) pthread_mutex_t the_lock;
+
+int global_single_lock = 0;
 
 void abortHTM(Thread* Self) {
     _xabort(0xab);

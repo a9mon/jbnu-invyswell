@@ -49,8 +49,14 @@ extern "C" {
 #  define THREAD_BARRIER(bar, tid)          barrier_cross(bar)
 #  define THREAD_BARRIER_FREE(bar)          barrier_free(bar)
 
-extern THREAD_MUTEX_T global_rtm_mutex;
+# define CACHE_LINE_SIZE 64
+extern __attribute__((aligned(CACHE_LINE_SIZE))) pthread_mutex_t the_lock;
 
+extern int totalcounts;
+extern int global_single_lock;
+extern int singlecount;
+extern int stmcount;
+extern int htmcount;
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
