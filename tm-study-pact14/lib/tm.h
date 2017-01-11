@@ -56,16 +56,14 @@
 #define TM_BEGIN() \
 { \
 	int tries = 4;	\
-	int stmretry = 3; \
+	/* int stmretry = 3; */ \
 	int isSingle = 0; \
-	sigjmp_buf tmbuf; \
+	/* sigjmp_buf tmbuf; \
 	do { \
-		if( sigsetjmp(tmbuf, 2) == 2 ) { \
-			isSingle = 1; \
-		} \
-	} while (0); \
+		sigsetjmp(tmbuf, 2); \
+	} while(0); */ \
 	while (1) {	\
-		while (is_fallback != 0) { printf("fallback?"); } \
+		while (is_fallback != 0) {} \
 	        if (tries > 0) { \
     			int status = _xbegin();	\
     			if (status == _XBEGIN_STARTED) { \
@@ -73,23 +71,25 @@
     	                        break;	\
     			} \
 			tries--; \
-    		} else if (isSingle == 0 && tries == 0) {  \
-    			STM_BEGIN_WR();   \
-			stmretry--; \
-			if (stmretry == 0) { \
-				printf("retry\n"); \
-				siglongjmp(tmbuf, 2); \
+    		} else { \
+			if (isSingle == 0) {  \
+	    			STM_BEGIN_WR();   \
+				/* stmretry--; */ \
+				/* if (stmretry == 0) { \
+					printf("retry\n"); \
+					siglongjmp(tmbuf, 2); \
+				} */ \
+        	                abortFunPtr = &abortSTM;    \
+                	        sharedReadFunPtr = &sharedReadSTM;  \
+                        	sharedWriteFunPtr = &sharedWriteSTM;    \
+	                        break;  \
+			} else { \
+				__sync_add_and_fetch(&is_fallback,1); \
+				pthread_mutex_lock(&global_rtm_mutex); \
+	                        sharedReadFunPtr = &sharedReadHTM; \
+        	                sharedWriteFunPtr = &sharedWriteHTM; \
+                	        break; \
 			} \
-                        abortFunPtr = &abortSTM;    \
-                        sharedReadFunPtr = &sharedReadSTM;  \
-                        sharedWriteFunPtr = &sharedWriteSTM;    \
-                        break;  \
-		} else { \
-			__sync_add_and_fetch(&is_fallback,1); \
-			pthread_mutex_lock(&global_rtm_mutex); \
-                        sharedReadFunPtr = &sharedReadHTM; \
-                        sharedWriteFunPtr = &sharedWriteHTM; \
-                        break; \
                 } \
 	}
 

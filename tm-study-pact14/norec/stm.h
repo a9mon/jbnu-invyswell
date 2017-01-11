@@ -27,8 +27,6 @@
 #  include <setjmp.h>
 #  define STM_JMPBUF_T                  sigjmp_buf
 #  define STM_JMPBUF                    buf
-#define TM_JMPBUF			tmbuf
-
 
 #define STM_VALID()                     (1)
 #define STM_RESTART()                   TxAbort(STM_SELF)
@@ -39,8 +37,6 @@
 #define STM_NEW_THREAD()                TxNewThread()
 #define STM_INIT_THREAD(t, id)          TxInitThread(t, id)
 #define STM_FREE_THREAD(t)              TxFreeThread(t)
-
-
 
 #  define STM_BEGIN(isReadOnly)         do { \
                                             STM_JMPBUF_T STM_JMPBUF; \
