@@ -79,6 +79,7 @@
 			tries--; \
     		} else {  \
     			STM_BEGIN_WR();   \
+			printf("stmretry : %d", stmretry); \
 			stmretry--; \
 			if (stmretry == 0) { \
 				__sync_add_and_fetch(&is_fallback,1); \
