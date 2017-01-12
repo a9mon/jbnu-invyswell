@@ -57,6 +57,7 @@ extern int global_single_lock;
 extern int singlecount;
 extern int stmcount;
 extern int htmcount;
+extern int singlelock_count;
 extern void abortHTM(Thread* Self);
 extern intptr_t sharedReadHTM(Thread* Self, intptr_t* addr);
 extern void sharedWriteHTM(Thread* Self, intptr_t* addr, intptr_t val);
@@ -69,6 +70,7 @@ extern __thread intptr_t (*sharedReadFunPtr)(Thread* Self, intptr_t* addr);
 extern __thread void (*sharedWriteFunPtr)(Thread* Self, intptr_t* addr, intptr_t val);
 
 extern volatile unsigned long is_fallback;
+extern int* thread_access;
 
 typedef struct barrier {
     pthread_cond_t complete;

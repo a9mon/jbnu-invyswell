@@ -22,10 +22,12 @@ static THREAD_T*         global_threads         = NULL;
 static void            (*global_funcPtr)(void*) = NULL;
 static void*             global_argPtr          = NULL;
 static volatile bool_t   global_doShutdown      = FALSE;
+int*		thread_access		= NULL;
 
 __attribute__((aligned(CACHE_LINE_SIZE))) pthread_mutex_t the_lock;
 
 int global_single_lock = 0;
+int singlelock_count = 0;
 
 void abortHTM(Thread* Self) {
     _xabort(0xab);
@@ -102,6 +104,12 @@ void thread_startup (long numThread)
     assert(global_threadIds);
     for (i = 0; i < numThread; i++) {
         global_threadIds[i] = i;
+    }
+
+    /* Set up thread access */
+    thread_access = (int*)malloc(numThread * sizeof(int));
+    for (i = 0; i < numThread; i++) {
+	thread_access[i] = 0; // -1 single lock, 0 idle, 1 process
     }
 
     /* Set up thread list */

@@ -530,3 +530,7 @@ long TxFinalize (Thread* Self, long clock) {
 void TxResetAfterFinalize (Thread* Self) {
     txCommitReset(Self);
 }
+
+int STMRetries (Thread* Self) {
+    return Self->Retries;
+}

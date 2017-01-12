@@ -58,6 +58,8 @@
 
 #define TM_BEGIN() \
 { \
+	int myid = thread_getId(); \
+	thread_access[myid] = 0; /* idle */ \
 	int tries = 4;	\
 	int stmretry = 3; \
 	int isSingle = 0; \
@@ -66,36 +68,65 @@
 		int checkvalue = sigsetjmp(tmbuf, 2); \
 		if (checkvalue != 0) { \
 			isSingle=1; tries=0; \
+			/* printf("%d th checkvalue is %d\n", myid, checkvalue); */ \
+			thread_access[myid] = 0; \
+			/* getchar(); */ \
+			/**/ \
 		} \
 	} while(0); \
 	while (1) {	\
+		while (singlelock_count != 0) { if(isSingle == 1) { break; } \
+						int check = singlelock_count; \
+						/* printf("%d thread check value = %d, and thread_access is %d\n", myid, check, thread_access[myid]); */ \
+						/* printf("%d singlelock_count\n", singlelock_count); */ \
+						if (check == 0) { break; } } \
 		while (is_fallback != 0) {} \
 	        if (tries > 0) { \
     			int status = _xbegin();	\
     			if (status == _XBEGIN_STARTED) { \
     				if (is_fallback != 0) { _xabort(0xab); } \
 				htmcount++; \
+				thread_access[myid] = 1; /* htm access */ \
     	                        break;	\
     			} \
 			tries--; \
     		} else { \
 			if (isSingle == 0) {  \
 	    			STM_BEGIN_WR();   \
-				stmretry--; \
-				if (stmretry <= 0) { \
+				/* stmretry--; */ \
+				/* printf("stmretry : %d\n", stmretry); */ \
+				if (STMRetries(STM_SELF) >= 3) { \
+					/* printf("stmretry... %d\n", stmretry); */ \
 					siglongjmp(tmbuf, 2); \
 				} \
         	                abortFunPtr = &abortSTM;    \
                 	        sharedReadFunPtr = &sharedReadSTM;  \
                         	sharedWriteFunPtr = &sharedWriteSTM;    \
 				stmcount++; \
+				thread_access[myid] = 2; /* stm access */ \
 	                        break;  \
 			} else { \
 				/* pthread_mutex_lock(&global_rtm_mutex); */ \
+				while(*((volatile int*)(&the_lock)) != 0); \
+				/* printf("%d lock\n",myid); */ \
 				pthread_mutex_lock(&the_lock); \
-	                        sharedReadFunPtr = &sharedReadHTM; \
-        	                sharedWriteFunPtr = &sharedWriteHTM; \
+				__sync_add_and_fetch(&singlelock_count,1); \
+				while(1) { \
+					int thread_access_index = 0; \
+					int myid = thread_getId(); \
+					int result = 0; \
+					for (;thread_access_index < thread_getNumThread();thread_access_index++) { \
+						if (thread_access_index == myid) continue; \
+						result += thread_access[thread_access_index]; \
+						/* printf("%d th thread value is %d\n", thread_access_index, thread_access[thread_access_index]); */ \
+					} \
+					if (result == 0) break; /* all thread idle */ \
+					/* else printf("%d th thread result is %d\n", myid, result); */ \
+				} /* getchar(); */ \
+		                sharedReadFunPtr = &sharedReadHTM; \
+        		        sharedWriteFunPtr = &sharedWriteHTM; \
 				singlecount++; \
+				thread_access[myid] = -1; /* access */ \
                 	        break; \
 			} \
                 } \
@@ -104,14 +135,21 @@
 
 #define TM_END() \
 	if (isSingle == 1) { \
+		/* printf("unlock, count = %d\n", singlelock_count); */ \
 		pthread_mutex_unlock(&the_lock); \
 		isSingle = 0; \
+		__sync_sub_and_fetch(&singlelock_count,1); \
+		/* printf("count is %d\n", singlelock_count); */ \
+		thread_access[myid] = 0; \
+		/* getchar(); */ \
 	} \
 	else { \
 		if (tries > 0) {	\
+			if (singlelock_count != 0) { _xabort(0xab); /* printf("singlelock restart htm.\n"); */ }  \
 	        	HTM_INC_CLOCK();  \
 			_xend();	\
 		} else {	\
+			if (singlelock_count != 0) { /* printf("singlelock restart stm.\n"); */ STM_RESTART(); } \
 			long local_global_clock = TX_END_HYBRID_FIRST_STEP();  \
 			int retriesCommit = 4; \
 			while (1) {  \
@@ -140,7 +178,9 @@
                 	sharedWriteFunPtr = &sharedWriteHTM;    \
 		} \
 	} \
+	thread_access[myid] = 0; \
 	totalcounts++; \
+	/* printf("totalcounts is %d\n",totalcounts); */ \
 };
 
 

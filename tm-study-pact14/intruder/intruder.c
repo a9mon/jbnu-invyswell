@@ -198,6 +198,7 @@ processPackets (void* argPtr)
         TM_BEGIN();
         bytes = TMSTREAM_GETPACKET(streamPtr);
         TM_END();
+	// printf("TM finished...\n"); getchar();
         if (!bytes) {
             break;
         }
@@ -211,6 +212,7 @@ processPackets (void* argPtr)
                                   bytes,
                                   (PACKET_HEADER_LENGTH + packetPtr->length));
         TM_END();
+	// printf("TM finished...\n"); getchar();
         if (error) {
             /*
              * Currently, stream_generate() does not create these errors.
@@ -225,6 +227,7 @@ processPackets (void* argPtr)
         TM_BEGIN();
         data = TMDECODER_GETCOMPLETE(decoderPtr, &decodedFlowId);
         TM_END();
+	// printf("TM finished...\n"); getchar();
         if (data) {
             error_t error = PDETECTOR_PROCESS(detectorPtr, data);
             P_FREE(data);
@@ -303,7 +306,6 @@ MAIN(argc, argv)
      * Run transactions
      */
 
-    printf("Run Treansactions...\n");
     TIMER_T startTime;
     TIMER_READ(startTime);
     GOTO_SIM();
