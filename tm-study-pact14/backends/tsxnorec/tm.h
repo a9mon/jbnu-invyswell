@@ -79,6 +79,7 @@
 						int check = singlelock_count; \
 						/* printf("%d thread check value = %d, and thread_access is %d\n", myid, check, thread_access[myid]); */ \
 						/* printf("%d singlelock_count\n", singlelock_count); */ \
+						usleep(1); \
 						if (check == 0) { break; } } \
 		while (is_fallback != 0) {} \
 	        if (tries > 0) { \
